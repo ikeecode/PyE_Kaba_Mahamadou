@@ -221,6 +221,14 @@ def v_date(text):
     except Exception as e:
         return False
 
+
+def change_dformat(text):
+    jour, sep1, mois, sep2, annee = separator(text)
+    mois = find_month(mois)
+    annee = find_year(annee)
+
+    return f"{annee}-{mois}-{jour}"
+
 #
 # d = '2004 fev 01'
 # g = '24 fev 2004'
