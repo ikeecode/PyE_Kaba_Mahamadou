@@ -2,7 +2,7 @@ import project_functions as pf
 from csv import reader
 from csv import DictReader
 import mysql.connector as mc
-
+from project_functions_sql import *
 
 
 maindata = dict()
@@ -67,94 +67,6 @@ for k in maindata.keys():
 
 
 
-# ceci est la fonction qui mets les lignes valident dans la base de donnees
-def push_to_database():
-    # connection a la base de donnees
-    print("Connection  à la base de donnees....")
-    mydb = mc.connect(
-        option_files = "my.ini"
-    )
-    mycursor = mydb.cursor()
-
-    mycursor.execute("DELETE FROM eleves")
-    mycursor.execute("DELETE FROM classes")
-    mycursor.execute("DELETE FROM notes")
-    mycursor.execute("DELETE FROM matieres")
-
-    mycursor.execute("ALTER TABLE eleves AUTO_INCREMENT = 1")
-    mycursor.execute("ALTER TABLE classes AUTO_INCREMENT = 1")
-    mycursor.execute("ALTER TABLE notes AUTO_INCREMENT = 1")
-    mycursor.execute("ALTER TABLE matieres AUTO_INCREMENT = 1")
-
-
-    print('Demarrage...')
-    for key in lignes_valides:
-        line           = lignes_valides[key]
-        numero         = line.get('Numero')
-        nom            = line.get('Nom')
-        prenom         = line.get('Prenom')
-        date_naissance = line.get('Date de naissance')
-        classe         = line.get('Classe')
-        notes          = line.get('Note')
-        try:
-            # print('Insertion des classes...'.center(10))
-            # insertion des classes
-            mycursor.execute(f"INSERT INTO classes (nom_classe) VALUES ('{classe}')")
-        except:
-            pass
-        mycursor.execute(f"SELECT id_classe FROM classes WHERE nom_classe = '{classe}'")
-        id_classe = mycursor.fetchone()[0]
-
-        # print('Insertion des eleves...'.center(10))
-        # insertion des informations de l'eleve
-        insert_eleve = f"""INSERT INTO eleves (numero, nom, prenom, date_naissance, id_classe)
-                           VALUES ('{numero}', '{nom}', '{prenom}', '{date_naissance}', '{id_classe}')
-                        """
-        mycursor.execute(insert_eleve)
-
-        # recuperation de l'id_eleve
-        mycursor.execute(f"SELECT id_eleve FROM eleves WHERE numero = '{numero}'")
-        id_eleve = mycursor.fetchone()[0]
-        #manage notes
-        # print(notes)
-        for matiere in notes:
-            if matiere != 'moyenne_generale':
-                # print(matiere, notes[matiere])
-                try:
-                    # print('Insertion des matieres...'.center(10))
-                    # insertion des matieres
-                    mycursor.execute(f"INSERT INTO matieres (nom_matiere) VALUES ('{matiere}')")
-                except:
-                    pass
-                mycursor.execute(f"SELECT id_matiere FROM matieres WHERE nom_matiere = '{matiere}'")
-                id_matiere = mycursor.fetchone()[0]
-                # print(matiere, id_matiere)
-
-                for type in notes[matiere]:
-                    # print('Insertion des notes...'.center(10))
-                    # insertion examen et moyenne dans la table notes
-                    if type != 'devoirs':
-                        value = notes[matiere][type]
-                        insert_note = f"""INSERT INTO notes (value, type, id_matiere, id_eleve)
-                                          VALUES ('{value}', '{type}', '{id_matiere}', '{id_eleve}')
-                                       """
-                        mycursor.execute(insert_note)
-                    else:
-                        # insertion des devoirs dans la table notes
-                        devoirs = notes[matiere][type]
-                        for value in devoirs:
-                            insert_note = f"""INSERT INTO notes (value, type, id_matiere, id_eleve)
-                                              VALUES ('{value}', '{type}', '{id_matiere}', '{id_eleve}')
-                                           """
-                            mycursor.execute(insert_note)
-
-    mydb.commit()
-    mydb.close()
-
-    print('FIN du programme')
-
-
-
 
 # ceci est le menu de modification
 def modif_menu():
@@ -200,14 +112,15 @@ def modif_menu():
 
 def menu():
     try:
-        print("MENU".center(183, '*'))
+        print("MENU".center(180, '*'))
         print("""
             1. Afficher les lignes valides
-            2. Afficher les lignes  invalides
+            2. Afficher les lignes invalides
             3. Afficher une information par numero
             4. Afficher les 5 premiers
             5. Modifier une information invalides
             6. Mettre les lignes valides dans la base de donnees
+            7. Afficher les infos d'une table au choix
             Ps: Mettez 0 ou un autre chiffre pour quitter
         """)
         try:
@@ -242,14 +155,17 @@ def menu():
             print("Modification des elements invalides".center(140, '-'))
             modif_menu()
         elif choix == 6:
-            push_to_database()
+            push_to_database(lignes_valides)
+            menu()
+        elif choix == 7:
+            affiche_table()
             menu()
         else:
-            print("Merci de votre visite".center(183, '*'))
+            print("Merci de votre visite".center(178, '*'))
             exit()
     except KeyboardInterrupt:
         print()
-        print("Merci de votre visite".center(183, '*'))
+        print("Merci de votre visite".center(178, '*'))
         print()
         exit()
 
@@ -258,9 +174,9 @@ print("""
 		   ####      ###
 		  #####     ###
 		 ######    ###
-		#######   #######################################
-	       ########ABA PROJET EXCEL 2022 @SONATEL ACADEMY   *
-		#######   #######################################
+		#######   ###########################################
+	       ########KABA PROJET EXCEL 2022 @SONATEL ACADEMY  *
+		#######   ###########################################
 		 ######    ###
 		  #####     ###
 		   ####      ###""")
