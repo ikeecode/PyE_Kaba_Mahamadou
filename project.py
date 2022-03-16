@@ -70,12 +70,13 @@ for k in maindata.keys():
 
 # ceci est le menu de modification
 def modif_menu():
-    print("""
+    print("""           |
                         |   1. Modifier une ligne invalides
                         |   2. Afficher les erreurs
         MODIFICATION    |   3. Afficher les lignes invalides
                         |   4. Revenir au menu principal
                         |   5. Pour sortir
+                        |
     """)
     subchoix = int(input("Faites votre choix: "))
 
