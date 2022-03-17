@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS notes(
   FOREIGN KEY (id_eleve) REFERENCES eleves(id_eleve)
 );
 
+/* Creation de la table moyennes */
 CREATE TABLE IF NOT EXISTS moyennes(
   id_eleve INT,
   id_classe INT,
@@ -51,38 +52,24 @@ CREATE TABLE IF NOT EXISTS moyennes(
   PRIMARY KEY (id_eleve, id_classe)
 );
 
-/*
-NB: note que:
-type ENUM('devoir', 'examen', 'moyenne'), n'est pas dans notre table qui
-est dans mysql alors faut penser le mettre a jour et voir comment inserer
-la moyenne generale et ou la mettre
-
- */
-
-/* calculer la moyenne des devoirs et ou examen chacun à part */
-
 
 DELIMITER |
 
-CREATE PROCEDURE moyenne_eleve (IN id INT, IN typo VARCHAR(10), OUT output FLOAT)
-BEGIN
-  SELECT AVG(value) INTO output FROM projet_python.notes WHERE id_eleve = id AND type = typo;
-END|
-/*
-CREATE TRIGGER insertion_moyenne_eleve AFTER INSERT ON notes
-FOR EACH ROW
-BEGIN
-  CALL moyenne_eleve(notes.id_eleve, 'devoirs', @devoir);
-  CALL moyenne_eleve(notes.id_eleve, 'examen', @examen);
-  INSERT INTO moyennes SET value = (SELECT (@devoir + 2 * @examen) / 3) WHERE moyennes.id_eleve = notes.id_eleve;
-END|
-*/
+/* Procedure qui calcule la moyenne d'un eleve en renseignant son id*/
+create procedure moyenne_eleve(IN id INT, OUT output FLOAT)
+  BEGIN
+    DECLARE dev, exam FLOAT DEFAULT 0.0;
+    SELECT AVG(value) INTO dev FROM projet_python.notes WHERE id_eleve = id AND type = 'devoirs';
+    SELECT AVG(value) INTO exam FROM projet_python.notes WHERE id_eleve = id AND type = 'examen';
+    SELECT (dev + 2*exam) /3 INTO output;
+  END|
+
+/* Trigger qui met à jour la moyenne quand on change une note*/
 CREATE TRIGGER update_moyenne_eleve AFTER UPDATE ON projet_python.notes
 FOR EACH ROW
 BEGIN
-  CALL moyenne_eleve(notes.id_eleve, 'devoirs', @devoir);
-  CALL moyenne_eleve(notes.id_eleve, 'examen', @examen);
-  UPDATE projet_python.moyennes SET moyennes.value = (SELECT (@devoir + 2 * @examen) / 3) WHERE moyennes.id_eleve = notes.id_eleve;
+  CALL moyenne_eleve(NEW.id_eleve, @moy);
+  UPDATE projet_python.moyennes SET value = @moy WHERE moyennes.id_eleve = NEW.id_eleve;
 END|
 
 DELIMITER ;
